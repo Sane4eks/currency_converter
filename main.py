@@ -31,22 +31,27 @@ def convert_currency():
         amount = float(amount_entry.get())
     except ValueError:
         messagebox.showerror("Ошибка", "Введите корректное число.")
-        return []
+        return
 
     url = f'https://v6.exchangerate-api.com/v6/{API_KEY}/latest/{base_currency}'
     resource = requests.get(url)
 
-    if resource.status_code == 200:
-        data = resource.json()
-        if data["result"] == "success":
-            if target_currency in data["conversion_rates"]:
-                rate = data["conversion_rates"][target_currency]
-                converted_amount = amount * rate
-                result_label.config(text=f"{amount:,.2f} {base_currency} = {converted_amount:,.2f} {target_currency}")
-            else:
-                messagebox.showerror("Ошибка", f"Валюта {target_currency} не найдена в базе API.")
-        else:
-            messagebox.showerror("Ошибка от API", f"{data.get('error-type', 'неизвестная ошибка')}")
+    if resource.status_code != 200:
+        messagebox.showerror("Ошибка подключения", f"Код ошибки: {resource.status_code}")
+        return
+
+    data = resource.json()
+
+    if data.get("result") != "success":
+        messagebox.showerror("Ошибка от API", data.get("error-type", "Неизвестная ошибка"))
+        return
+    if target_currency not in data["conversion_rates"]:
+        messagebox.showerror("Ошибка", f"Валюта {target_currency} не найдена в базе API.")
+        return
+
+    rate = data["conversion_rates"][target_currency]
+    converted_amount = amount * rate
+    result_label.config(text=f"{amount:,.2f} {base_currency} = {converted_amount:,.2f} {target_currency}")
 
 
 # Создаем главное окно
